@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0-windows</TargetFramework><UseWPF>true</UseWPF>
+    <EnableWindowsTargeting>true</EnableWindowsTargeting><ImplicitUsings>enable</ImplicitUsings><Nullable>enable</Nullable>
+    <AssemblyName>Designer.Modules.LayoutLabProbe</AssemblyName>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="ModuleCommon"><HintPath>$(DesignerDir)/ModuleCommon.dll</HintPath><Private>false</Private></Reference>
+  </ItemGroup>
+</Project>

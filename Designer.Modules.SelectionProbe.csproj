@@ -1,0 +1,31 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <EnableWindowsTargeting>true</EnableWindowsTargeting>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AssemblyName>Designer.Modules.SelectionProbe</AssemblyName>
+    <Version>0.15.0</Version>
+    <Deterministic>true</Deterministic>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Remove="tests/**/*.cs" />
+    <Reference Include="0Harmony"><HintPath>$(DesignerDir)/0Harmony.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="ModuleCommon">
+      <HintPath>$(DesignerDir)/ModuleCommon.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="ActiproSoftware.Shared.Wpf">
+      <HintPath>$(DesignerDir)/ActiproSoftware.Shared.Wpf.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="ActiproSoftware.DataGrid.Contrib.Wpf">
+      <HintPath>$(DesignerDir)/ActiproSoftware.DataGrid.Contrib.Wpf.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+  </ItemGroup>
+  <Target Name="RequireDesignerReference" BeforeTargets="ResolveReferences">
+    <Error Condition="!Exists('$(DesignerDir)/ModuleCommon.dll')" Text="Set DesignerDir to a local Designer installation containing ModuleCommon.dll." />
+  </Target>
+</Project>
