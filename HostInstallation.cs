@@ -20,8 +20,6 @@ internal static class HostInstallation
         try
         {
             if (IsLab) return true;
-            var marker = Path.Combine(AppContext.BaseDirectory, ".schematic-tools-enabled");
-            if (!File.Exists(marker) || File.ReadAllText(marker).Trim() != DesignerHash) return false;
             return Hash("Q-Sys Designer.dll") == DesignerHash && Hash("ModuleCommon.dll") == ModuleCommonHash;
         }
         catch { return false; }

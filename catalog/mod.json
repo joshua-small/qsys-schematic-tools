@@ -1,0 +1,9 @@
+{
+  "schema": 1,
+  "id": "schematic-tools",
+  "name": "Schematic Tools",
+  "description": "Packing and shortcuts, named-signal colors, aligned color palette, icon search, editor shortcuts, and snapshot tools.",
+  "author": "joshua-small",
+  "thumbnail": "catalog/artwork/avitex.ico",
+  "helpUrl": "https://github.com/joshua-small/qsys-schematic-tools"
+}
