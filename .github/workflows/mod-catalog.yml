@@ -1,0 +1,29 @@
+name: Mod catalog
+on:
+  pull_request:
+    paths: ['catalog/**', '.github/workflows/mod-catalog.yml']
+  push:
+    branches: [main]
+    paths: ['catalog/**', '.github/workflows/mod-catalog.yml']
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Published stable release tag'
+        type: string
+        required: true
+      content_ref:
+        description: 'Content ref (blank uses release tag; historical migration uses merged content commit)'
+        type: string
+        default: ''
+permissions:
+  contents: write
+jobs:
+  catalog:
+    uses: joshua-small/qsys-mod-manager/.github/workflows/publish-mod-catalog.yml@d4504cb13eb46913107ba47b7acd6230633b0f43
+    with:
+      tool_revision: d4504cb13eb46913107ba47b7acd6230633b0f43
+      tag: ${{ github.event.release.tag_name || inputs.tag || '' }}
+      content_ref: ${{ inputs.content_ref || '' }}
+      publish: ${{ github.event_name == 'release' || github.event_name == 'workflow_dispatch' }}
