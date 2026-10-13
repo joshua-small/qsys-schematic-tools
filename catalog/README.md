@@ -3,7 +3,7 @@
 This repository owns the content displayed for Schematic Tools in Q-SYS Mod Manager.
 
 - Edit `mod.json` for the description, GitHub username, artwork path and repository help link.
-- Keep artwork in this directory. Replace the starter icon with the mod-specific PNG, JPEG or ICO (at most 1 MiB).
+- Keep artwork in this directory as PNG, JPEG or ICO (at most 1 MiB). The thumbnail uses the supplied Avitex icon; source artwork and provenance are in [artwork/](artwork/README.md).
 - Add `releases/<tag>.md` before tagging. Notes are shown verbatim as plain text.
 - Publish a stable GitHub release containing exactly one already-built `.qdsmod` asset. The pinned release workflow verifies it and attaches an immutable `qmm-catalog.json`.
 - The separate [approved catalog](https://github.com/joshua-small/qsys-mod-catalog) verifies the source commit, artwork and package, then publishes routine releases automatically. New mod identities and file-layout changes require initial catalog review; they do not require manager code changes.

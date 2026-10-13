@@ -1,3 +1,5 @@
+<img src="catalog/artwork/avitex-wordmark-blue.svg" alt="Avitex" width="220">
+
 # Q-SYS Schematic Tools
 
 Packing, search, shortcuts, and snapshot tools for Q-SYS Designer 10.5.
