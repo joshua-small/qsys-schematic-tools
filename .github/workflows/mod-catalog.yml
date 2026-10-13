@@ -21,9 +21,9 @@ permissions:
   contents: write
 jobs:
   catalog:
-    uses: joshua-small/qsys-mod-manager/.github/workflows/publish-mod-catalog.yml@a70e7273e6786ed2ae163c81267f73131e0612bc
+    uses: joshua-small/qsys-mod-manager/.github/workflows/publish-mod-catalog.yml@9fda78006273c91b56302395c7c33e60d5911c6b
     with:
-      tool_revision: a70e7273e6786ed2ae163c81267f73131e0612bc
+      tool_revision: 9fda78006273c91b56302395c7c33e60d5911c6b
       tag: ${{ github.event.release.tag_name || inputs.tag || '' }}
       content_ref: ${{ inputs.content_ref || '' }}
       publish: ${{ github.event_name == 'release' || github.event_name == 'workflow_dispatch' }}
