@@ -2,13 +2,15 @@
 
 This repository owns the content displayed for Schematic Tools in Q-SYS Mod Manager.
 
-- Edit `mod.json` for the description, GitHub username, artwork path and help link.
-- Keep artwork in this directory. `icon.ico` is the existing Q-SYS Mod Manager mark, copied here as starter artwork; replace it with a mod-specific PNG, JPEG or ICO (up to 1 MiB).
-- Add `releases/<tag>.md` before tagging a release (for example `v0.15.0.md`). These UTF-8 notes are displayed verbatim as plain text; no AI summary or README scraping is involved.
-- Publish a stable GitHub release with exactly one already-built `.qdsmod` asset. The release workflow verifies it using the manager's approved package rules, then attaches `qmm-catalog.json`.
-- The manager's scheduled catalog workflow reads that record, verifies its source commit, image and package, and proposes a catalog update for review. Publishing a mod release alone does not approve it for the manager.
-- The record pins content to a commit and cannot be replaced. Correct content in the next release; never replace a published package or delete historical assets.
+- Edit `mod.json` for the description, GitHub username, artwork path and repository help link.
+- Keep artwork in this directory. Replace the starter icon with the mod-specific PNG, JPEG or ICO (at most 1 MiB).
+- Add `releases/<tag>.md` before tagging. Notes are shown verbatim as plain text.
+- Publish a stable GitHub release containing exactly one already-built `.qdsmod` asset. The pinned release workflow verifies it and attaches an immutable `qmm-catalog.json`.
+- The separate [approved catalog](https://github.com/joshua-small/qsys-mod-catalog) verifies the source commit, artwork and package, then publishes routine releases automatically. New mod identities and file-layout changes require initial catalog review; they do not require manager code changes.
+- Never replace a published package or descriptor or delete historical assets. Correct presentation in the next release. The explicit workflow `content_ref` input can supply content for historical tags without moving them.
 
-For the existing v0.15.0 release, run **Mod catalog → Run workflow** on main after this change is merged, choose `v0.15.0`, and set **Content ref** to the merged content commit. This explicit migration supplies content that the original tag predates, without moving the tag or rebuilding its package. For future releases, leave Content ref empty to use the release tag.
+Version 0.15.1 uses a schema-2 package without an enable marker. QMM installs or removes the module to enable or disable it. Exact Designer build checks remain. Release it only after a manager with schema-2 and signed-feed support (0.7.0 or newer) is available; older managers cannot read the new package format.
 
-The ID, canonical package name, module filenames, supported Designer build and shared dependency hashes remain manager-controlled approval rules. A new mod or support change still requires manager review. Workflow tooling is pinned to a reviewed manager commit; update both workflow references together when adopting a new contract.
+The supported Designer hashes, repository identity and permitted file layouts come from reviewed catalog approvals. Harmony and its license remain shared dependencies of this mod, but are not required of unrelated mods.
+
+For packaging and onboarding details, see the [package contract](https://github.com/joshua-small/qsys-mod-catalog/blob/main/PACKAGE-CONTRACT.md). Both reusable-workflow and tool references must use the same reviewed manager commit.
