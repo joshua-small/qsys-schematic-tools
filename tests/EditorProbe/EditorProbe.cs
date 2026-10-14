@@ -65,9 +65,12 @@ public sealed class EditorProbe : IDesignerModule
         {
             if (++attempts < 12 || Application.Current.MainWindow is not { IsLoaded: true, IsEnabled: true } main) return;
             var bindings = main.InputBindings.OfType<KeyBinding>().Where(b => b.Command is RoutedCommand c && c.Name.StartsWith("QsysTools")).ToArray();
-            if (bindings.Length != 5 && attempts < 30) return;
+            if (bindings.Length != 7 && attempts < 30) return;
             timer!.Stop(); Directory.CreateDirectory(config!.OutputDirectory);
-            Require(bindings.Length == 5, "Editor shortcuts did not install; inspect startup receipts.");
+            Require(bindings.Length == 7, "Editor shortcuts did not install; inspect startup receipts.");
+            Require(bindings.Single(b => ((RoutedCommand)b.Command).Name == "QsysToolsAllSidebars").Key == Key.D0
+                && bindings.Single(b => ((RoutedCommand)b.Command).Name == "QsysToolsLightDarkMode").Key == Key.D
+                && bindings.All(b => b.Modifiers == (ModifierKeys.Control | ModifierKeys.Alt)), "Display shortcut gestures differ from documentation.");
             var host = AppDomain.CurrentDomain.GetAssemblies().Single(a => a.GetName().Name == "Q-Sys Designer");
             Require(Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(host.Location))).ToLowerInvariant()
                 == "0e7150f8dc02e0159e019188780fb003ce025f5ec18c491609cf337d849bda60", "Unexpected host.");
@@ -106,6 +109,40 @@ public sealed class EditorProbe : IDesignerModule
                 }
                 finally { if (Property(panel, "State").ToString() != before) { Execute(names[i]); await Idle(); } }
             }
+            var panels = fields.Select(field => Field(document, field)).ToArray();
+            var initialStates = panels.Select(panel => Property(panel, "State").ToString()).ToArray();
+            bool AllState(string state) => panels.All(panel => Property(panel, "State").ToString() == state);
+            try
+            {
+                for (int i = 0; i < panels.Length; i++)
+                    if (Property(panels[i], "State").ToString() != "Docked") { Execute(names[i]); await Idle(); }
+                Execute("AllSidebars"); await Idle(); Require(AllState("AutoHide"), "All-sidebars command did not collapse every sidebar.");
+                Execute("AllSidebars"); await Idle(); Require(AllState("Docked"), "All-sidebars command did not expand every sidebar.");
+                Execute("DesignElements"); await Idle();
+                Require(!AllState("Docked") && !AllState("AutoHide"), "Mixed-state fixture was not established.");
+                Execute("AllSidebars"); await Idle(); Require(AllState("AutoHide"), "Mixed sidebars did not converge to collapsed.");
+                Execute("AllSidebars"); await Idle(); Require(AllState("Docked"), "Mixed-layout collapse did not expand on second press.");
+                checks.Add(new { allSidebarsCollapseExpand = true, mixedSidebarsCollapseFirst = true });
+            }
+            finally
+            {
+                for (int i = 0; i < panels.Length; i++)
+                    if (Property(panels[i], "State").ToString() != initialStates[i]) { Execute(names[i]); await Idle(); }
+            }
+
+            var scheme = host.GetType("QSC.QSys.App")!.GetProperty("ColorScheme", Static)!.GetValue(null)!;
+            var toggled = scheme.GetType().GetProperty("IsThemeToggled")!;
+            bool initialToggle = (bool)toggled.GetValue(scheme)!, initialDark = (bool)Property(scheme, "IsDark");
+            try
+            {
+                Execute("LightDarkMode"); await Idle();
+                Require((bool)toggled.GetValue(scheme)! != initialToggle && (bool)Property(scheme, "IsDark") != initialDark, "Native theme did not change.");
+                Execute("LightDarkMode"); await Idle();
+                Require((bool)toggled.GetValue(scheme)! == initialToggle && (bool)Property(scheme, "IsDark") == initialDark, "Native theme did not restore.");
+                checks.Add(new { themeToggleAndRestore = true });
+            }
+            finally { toggled.SetValue(scheme, initialToggle); await Idle(); }
+
             var appInfo = host.GetType("QSC.QSys.App")!.GetField("AppInfo", Static)!.GetValue(null)!;
             var mode = appInfo.GetType().GetProperty("ScriptProgrammerMode")!; bool initial = (bool)mode.GetValue(appInfo)!;
             var menu = (MenuItem)Field(main, "mnuScriptProgrammerMode");
@@ -124,7 +161,7 @@ public sealed class EditorProbe : IDesignerModule
             var nativeInfo = (UserControl)commandType.GetField("_ComponentInfo", Static)!.GetValue(null)!;
             if (Window.GetWindow(nativeInfo) is { } floating) { floating.Left = -32000; floating.Top = -32000; }
             Require(Tree(nativeInfo).OfType<TextBox>().Any(t => t.Name == "ComponentInfoSearchText"), "Native command window has no search.");
-            Require(nativeInfo.InputBindings.OfType<KeyBinding>().Count() == 5, "Floating info did not retain the five editor shortcuts.");
+            Require(nativeInfo.InputBindings.OfType<KeyBinding>().Count() == 7, "Floating info did not retain all seven editor shortcuts.");
             var localInfoBinding = nativeInfo.InputBindings.OfType<KeyBinding>().Single(binding => ((RoutedCommand)binding.Command).Name == "QsysToolsComponentControlsInfo");
             ((RoutedCommand)localInfoBinding.Command).Execute(null, localInfoBinding.CommandTarget);
             await Idle(); Require(!(bool)Property(infoWindow, "IsOpen"), "Native Controls Info did not close from its local shortcut route.");

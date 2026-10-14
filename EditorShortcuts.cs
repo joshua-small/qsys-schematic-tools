@@ -52,10 +52,13 @@ internal sealed class EditorShortcuts : IDisposable
             ?? throw new MissingMemberException("AppInfo.ScriptProgrammerMode");
         var info = (RoutedCommand)SelectionMover.HostType("QSC.QSys.Commands.NamedComponentInfo")
             .GetField("Command", BindingFlags.Static | BindingFlags.Public)!.GetValue(null)!;
-        if (!window.CommandBindings.Cast<CommandBinding>().Any(binding => ReferenceEquals(binding.Command, info)))
-            throw new InvalidOperationException("Native Controls Info command is not ready.");
+        var theme = (RoutedCommand)SelectionMover.HostType("QSC.QSys.Commands.ColorSchemeToggle")
+            .GetField("Command", BindingFlags.Static | BindingFlags.Public)!.GetValue(null)!;
+        foreach (var native in new[] { info, theme })
+            if (!window.CommandBindings.Cast<CommandBinding>().Any(binding => ReferenceEquals(binding.Command, native)))
+                throw new InvalidOperationException($"Native {native.Name} command is not ready.");
 
-        var keys = new[] { Key.D1, Key.D2, Key.D3, Key.I, Key.P };
+        var keys = new[] { Key.D1, Key.D2, Key.D3, Key.I, Key.P, Key.D0, Key.D };
         var elements = VisualElements(window).ToArray();
         var gestures = elements.SelectMany(element => element.InputBindings.Cast<InputBinding>().Select(binding => binding.Gesture))
             .Concat(elements.SelectMany(element => element.CommandBindings.Cast<CommandBinding>())
@@ -65,8 +68,8 @@ internal sealed class EditorShortcuts : IDisposable
             if (gestures.Any(gesture => gesture.Key == key && gesture.Modifiers == Modifiers))
                 throw new InvalidOperationException($"Ctrl+Alt+{key} is already bound; editor shortcuts left unchanged.");
 
-        var labels = new[] { "Toggle Design Elements", "Toggle Properties", "Toggle Schematic Elements", "Component Controls Info", "Script Programmer Mode" };
-        var names = new[] { "DesignElements", "Properties", "SchematicElements", "ComponentControlsInfo", "ScriptProgrammerMode" };
+        var labels = new[] { "Toggle Design Elements", "Toggle Properties", "Toggle Schematic Elements", "Component Controls Info", "Script Programmer Mode", "Toggle All Sidebars", "Toggle Light/Dark Mode" };
+        var names = new[] { "DesignElements", "Properties", "SchematicElements", "ComponentControlsInfo", "ScriptProgrammerMode", "AllSidebars", "LightDarkMode" };
         var menu = (Menu)Field(window, "mainMenu");
         var allMenus = Menus(menu).ToArray();
         var view = allMenus.FirstOrDefault(item => item.Items.OfType<MenuItem>().Any(child => child.Command is RoutedCommand command && command.OwnerType.FullName == "QSC.QSys.MainWindow" && command.Name.Contains("Zoom In", StringComparison.OrdinalIgnoreCase)))
@@ -75,7 +78,7 @@ internal sealed class EditorShortcuts : IDisposable
         for (int i = 0; i < keys.Length; i++)
         {
             int index = i;
-            string text = "Ctrl+Alt+" + (i < 3 ? (i + 1).ToString() : keys[i].ToString());
+            string text = "Ctrl+Alt+" + (keys[i] is >= Key.D0 and <= Key.D9 ? ((int)keys[i] - (int)Key.D0).ToString() : keys[i].ToString());
             var command = new RoutedUICommand(labels[i], "QsysTools" + names[i], typeof(EditorShortcuts));
             var binding = new CommandBinding(command, (_, e) =>
             {
@@ -84,27 +87,31 @@ internal sealed class EditorShortcuts : IDisposable
                 {
                     if (index < 3) TogglePanel(panels[index]);
                     else if (index == 3) info.Execute(null, window);
-                    else programmerProperty.SetValue(appInfo, !(bool)programmerProperty.GetValue(appInfo)!);
+                    else if (index == 4) programmerProperty.SetValue(appInfo, !(bool)programmerProperty.GetValue(appInfo)!);
+                    else if (index == 5) ToggleAllPanels(panels);
+                    else theme.Execute(null, window);
                     Report("editor-shortcut-executed", new { action = names[index] });
                 }
                 catch (Exception ex) { error(ex); }
             }, (_, e) =>
             {
                 e.CanExecute = window.IsEnabled && (index < 3 ? (bool)Property(panels[index], "IsOpen")
-                    : index == 3 ? info.CanExecute(null, window) : programmer.IsEnabled);
+                    : index == 3 ? info.CanExecute(null, window)
+                    : index == 4 ? programmer.IsEnabled
+                    : index == 5 ? SidebarPanels(panels).Any() : theme.CanExecute(null, window));
                 e.Handled = true;
             });
             var input = new KeyBinding(command, keys[i], Modifiers) { CommandTarget = window };
             window.CommandBindings.Add(binding); commandBindings.Add(binding);
             window.InputBindings.Add(input); inputBindings.Add(input);
-            if (index < 3 && view is not null)
+            if ((index < 3 || index >= 5) && view is not null)
             {
                 var entry = new MenuItem { Header = labels[i], Command = command, CommandTarget = window, InputGestureText = text };
                 view.Items.Add(entry); menuItems.Add((view, entry));
             }
             else
             {
-                var entry = index == 4 ? programmer : allMenus.FirstOrDefault(item => ReferenceEquals(item.Command, info));
+                var entry = index == 4 ? programmer : index == 3 ? allMenus.FirstOrDefault(item => ReferenceEquals(item.Command, info)) : null;
                 if (entry is not null) { hints.Add((entry, entry.InputGestureText)); entry.InputGestureText = text; }
             }
         }
@@ -116,16 +123,31 @@ internal sealed class EditorShortcuts : IDisposable
     {
         bool expand = Property(panel, "State").ToString() == "AutoHide";
         // Match QDS's own arrow button, including tabbed panels sharing a container.
-        object target = panel is FrameworkElement { Parent: { } parent }
-            && parent.GetType().FullName == "ActiproSoftware.Windows.Controls.Docking.ToolWindowContainer" ? parent : panel;
-        Call(target, expand ? "Dock" : "AutoHide");
+        Call(PanelTarget(panel), expand ? "Dock" : "AutoHide");
+    }
+
+    private static object PanelTarget(object panel) => panel is FrameworkElement { Parent: { } parent }
+        && parent.GetType().FullName == "ActiproSoftware.Windows.Controls.Docking.ToolWindowContainer" ? parent : panel;
+
+    private static IEnumerable<object> SidebarPanels(IEnumerable<object> panels) => panels.Where(panel =>
+        (bool)Property(panel, "IsOpen") && Property(panel, "State").ToString() is "Docked" or "AutoHide");
+
+    private static void ToggleAllPanels(IEnumerable<object> panels)
+    {
+        // Choose one direction from current state; in a mixed layout, collapse.
+        // Resolve and deduplicate containers before moving any of their tabs.
+        var sidebars = SidebarPanels(panels).ToArray();
+        bool expand = sidebars.All(panel => Property(panel, "State").ToString() == "AutoHide");
+        var targets = sidebars.Where(panel => (Property(panel, "State").ToString() == "AutoHide") == expand)
+            .Select(PanelTarget).Distinct(ReferenceEqualityComparer.Instance).ToArray();
+        foreach (var target in targets) Call(target, expand ? "Dock" : "AutoHide");
     }
 
     internal static void BindControlsInfo(UIElement owner)
     {
         if (Application.Current.MainWindow is not { } main) return;
         // The native info tool normally floats in its own Window, outside the
-        // main window's input route. Forward only our five gestures there too.
+        // main window's input route. Forward our editor gestures there too.
         foreach (var binding in main.InputBindings.OfType<KeyBinding>().Where(binding => binding.Command is RoutedCommand command
             && command.OwnerType == typeof(EditorShortcuts)))
         {

@@ -8,6 +8,8 @@ Install **Schematic Tools** from [Q-SYS Mod Manager](https://github.com/joshua-s
 
 - Open **Edit → Schematic Tools** to pack selected components and layout items, set the gap, or adjust named-signal colors.
 - Use **Ctrl+Shift+L / R / T / B** to pack with the selected gap. Input/output connectors pack without a gap.
+- Use **Ctrl+Alt+D** to toggle light/dark mode, just like Designer's title-bar theme button. This lasts until Designer restarts; your theme preference stays unchanged.
+- Use **Ctrl+Alt+0** to collapse all three sidebars together, or expand them when all are collapsed. **Ctrl+Alt+1 / 2 / 3** toggle Design Elements, Properties, and Schematic Elements individually. Closed or floating panels stay as they are. These commands are also in **View** and work with Schematic Tools closed.
 - Type in the icon picker or Component Controls Info search field to filter results.
 - Snapshot dots show controls included in snapshot banks. Open **Snapshot Inspector** to find those controls, gather them into a workspace, or compare current and saved values without recalling a snapshot.
 
