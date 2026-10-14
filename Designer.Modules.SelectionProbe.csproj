@@ -6,10 +6,14 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <AssemblyName>Designer.Modules.SelectionProbe</AssemblyName>
-    <Version>0.15.1</Version>
+    <Version>0.17.0</Version>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
     <Deterministic>true</Deterministic>
+    <DefaultItemExcludes>$(DefaultItemExcludes);artifacts/**</DefaultItemExcludes>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="DeveloperModule.cs" />
+    <ProjectReference Include="../qsys-mods-core/Core/Qmm.Shared.ModsCore.csproj" />
     <Compile Remove="tests/**/*.cs" />
     <Reference Include="0Harmony"><HintPath>$(DesignerDir)/0Harmony.dll</HintPath><Private>false</Private></Reference>
     <Reference Include="ModuleCommon">
