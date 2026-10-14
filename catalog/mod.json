@@ -2,8 +2,8 @@
   "schema": 1,
   "id": "schematic-tools",
   "name": "Schematic Tools",
-  "description": "Packing and shortcuts, named-signal colors, aligned color palette, icon search, editor shortcuts, and snapshot tools.",
+  "description": "Optional selection diagnostics for mod developers. Hidden unless /mods-dev or native development mode is already enabled.",
   "author": "joshua-small",
-  "thumbnail": "catalog/artwork/avitex.ico",
-  "helpUrl": "https://github.com/joshua-small/qsys-schematic-tools"
+  "helpUrl": "https://github.com/joshua-small/qsys-schematic-tools",
+  "thumbnail": "catalog/artwork/avitex.ico"
 }

@@ -1,18 +1,23 @@
-<img src="catalog/artwork/avitex-wordmark-blue.svg" alt="Avitex" width="220">
+# Schematic Tools
 
-# Q-SYS Schematic Tools
+Schematic Tools 0.17 is an optional selection-diagnostics mod for developers. Start Designer with `/mods-dev`, or use an already-enabled native development mode, to reveal **Tools > Q-SYS Mods > Schematic Tools — Selection Diagnostics**. The mod never enables native `/dev` itself. Ordinary startup hides its entry.
 
-Packing, search, shortcuts, and snapshot tools for Q-SYS Designer 10.5.
+The former user tools now live in separate repositories:
 
-Install **Schematic Tools** from [Q-SYS Mod Manager](https://github.com/joshua-small/qsys-mod-manager/releases/latest), then restart Designer.
+- [Better Packing](https://github.com/joshua-small/qsys-better-packing)
+- [Named Signal Colors](https://github.com/joshua-small/qsys-named-signal-colors)
+- [Snapshot Inspector](https://github.com/joshua-small/qsys-snapshot-inspector)
+- [Better Shortcuts](https://github.com/joshua-small/qsys-better-shortcuts)
+- [Color Palette Aligned](https://github.com/joshua-small/qsys-color-palette-aligned)
+- [Icons Filter](https://github.com/joshua-small/qsys-icons-filter)
+- [Component Controls Info Filter](https://github.com/joshua-small/qsys-component-controls-info-filter)
 
-- Open **Edit → Schematic Tools** to pack selected components and layout items, set the gap, or adjust named-signal colors.
-- Use **Ctrl+Shift+L / R / T / B** to pack with the selected gap. Input/output connectors pack without a gap.
-- Use **Ctrl+Alt+D** to toggle light/dark mode, just like Designer's title-bar theme button. This lasts until Designer restarts; your theme preference stays unchanged.
-- Use **Ctrl+Alt+0** to collapse all three sidebars together, or expand them when all are collapsed. **Ctrl+Alt+1 / 2 / 3** toggle Design Elements, Properties, and Schematic Elements individually. Closed or floating panels stay as they are. These commands are also in **View** and work with Schematic Tools closed.
-- Type in the icon picker or Component Controls Info search field to filter results.
-- Snapshot dots show controls included in snapshot banks. Open **Snapshot Inspector** to find those controls, gather them into a workspace, or compare current and saved values without recalling a snapshot.
+All use [Q-SYS Mods Core](https://github.com/joshua-small/qsys-mods-core) 0.1.x. Automatic Geometry remains independent. Preferences appear in the native File > Preferences dialog and operation windows under Tools > Q-SYS Mods.
 
-Disable or remove the bundle through Mod Manager while Designer is closed. This is an unofficial Designer extension.
+Use Q-SYS Mod Manager 0.8+ and **Split Schematic Tools** to migrate the older bundle. The transaction preserves unrelated pins, profile identity, package history, and Undo. Named Signal Colors imports the existing palette without modifying its original file. Do not manually enable a pre-0.17 bundle beside the replacements.
 
-The mod's manager description, artwork and version-specific notes live in [catalog/](catalog/README.md). Its release workflow publishes verified metadata to the separate approved catalog. Modern packages use no enable marker; Mod Manager controls activation by managing the module file.
+The public history through commit `13c52e6` preserves the bundled implementation, its tests, and prior application evidence. The diagnostics successor is read-only: it reports selected object types/labels/positions and host/undo state, with a 256-object limit. It writes only local diagnostic receipts.
+
+Build `Designer.Modules.SelectionProbe.csproj` with .NET 10.0.112, an adjacent Core checkout, and local `DesignerDir` references. The exact approved Designer 10.5 binaries are required; no new Designer or hardware compatibility is implied.
+
+[Split and release tracking](https://github.com/joshua-small/qsys-schematic-tools/issues/4).
