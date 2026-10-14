@@ -23,8 +23,15 @@ public sealed class SelectionProbeModule : ModModule
         Host.Theme(window); var body = new DockPanel { Margin = new Thickness(12) };
         var read = new Button { Content = "Read current selection", Padding = new Thickness(10,6,10,6), Margin = new Thickness(0,0,0,10), HorizontalAlignment = HorizontalAlignment.Left };
         DockPanel.SetDock(read,Dock.Top); body.Children.Add(read);
+        var move = new Button { Content = "Debug: Move selection down 20", Padding = new Thickness(10,6,10,6), Margin = new Thickness(0,0,0,10), HorizontalAlignment = HorizontalAlignment.Left };
+        DockPanel.SetDock(move,Dock.Top); body.Children.Add(move);
         output = new TextBox { IsReadOnly = true, AcceptsReturn = true, FontFamily = new System.Windows.Media.FontFamily("Consolas"), VerticalScrollBarVisibility = ScrollBarVisibility.Auto, HorizontalScrollBarVisibility = ScrollBarVisibility.Auto };
         body.Children.Add(output); window.Content = body; read.Click += (_, _) => Read();
+        move.Click += (_, _) =>
+        {
+            try { output.Text = HostSelection.MoveDown20((kind, detail) => Host.RequiredReceipt("schematic-tools", kind, detail)); }
+            catch (Exception ex) { output.Text = ex.GetBaseException().Message; Host.Error("schematic-tools",ex); }
+        };
         window.Closed += (_, _) => { window = null; output = null; }; window.Show(); Read();
     }
     private void Read()
