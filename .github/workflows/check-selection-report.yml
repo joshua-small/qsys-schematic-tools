@@ -1,0 +1,37 @@
+name: Selection report checks
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/check-selection-report.yml'
+      - 'global.json'
+      - 'DeveloperModule.cs'
+      - 'Designer.Modules.SelectionProbe.csproj'
+      - 'SelectionReport.cs'
+      - 'tests/SelectionReport.Tests/**'
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/check-selection-report.yml'
+      - 'global.json'
+      - 'DeveloperModule.cs'
+      - 'Designer.Modules.SelectionProbe.csproj'
+      - 'SelectionReport.cs'
+      - 'tests/SelectionReport.Tests/**'
+
+permissions:
+  contents: read
+
+jobs:
+  selection-report:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+      - name: Run portable selection-report checks
+        run: dotnet run --project tests/SelectionReport.Tests/SelectionReport.Tests.csproj --configuration Release

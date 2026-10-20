@@ -13,6 +13,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="DeveloperModule.cs" />
+    <Compile Include="SelectionReport.cs" />
     <ProjectReference Include="../qsys-mods-core/Core/Qmm.Shared.ModsCore.csproj" />
     <Compile Remove="tests/**/*.cs" />
     <Reference Include="0Harmony"><HintPath>$(DesignerDir)/0Harmony.dll</HintPath><Private>false</Private></Reference>

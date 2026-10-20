@@ -20,4 +20,15 @@ The public history through commit `13c52e6` preserves the bundled implementation
 
 Build `Designer.Modules.SelectionProbe.csproj` with .NET 10.0.112, an adjacent Core checkout, and local `DesignerDir` references. The exact approved Designer 10.5 binaries are required; no new Designer or hardware compatibility is implied.
 
+Run the portable selection-report regressions without Designer or Core:
+
+```sh
+dotnet run --project tests/SelectionReport.Tests/SelectionReport.Tests.csproj --configuration Release
+```
+
+The suite tests the production report helper with synthetic inputs. See
+[selection report validation](docs/SELECTION-REPORT-VALIDATION.md) for coverage,
+error boundaries, and the separate native lifecycle acceptance procedure.
+Automatic selection refresh is not part of these changes.
+
 [Split and release tracking](https://github.com/joshua-small/qsys-schematic-tools/issues/4).

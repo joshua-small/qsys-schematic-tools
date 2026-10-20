@@ -1,5 +1,4 @@
 using System.Collections;
-using System.Text.Json;
 using System.Windows;
 using System.Windows.Controls;
 using QsysMods.Core;
@@ -38,14 +37,11 @@ public sealed class SelectionProbeModule : ModModule
     {
         try
         {
-            var selection = ((IEnumerable)HostSelection.GlobalSelection).Cast<object>().Take(256).Select(item => new
-            {
-                type = item.GetType().FullName,
-                label = item.GetType().GetProperty("Label")?.GetValue(item) as string,
-                position = item.GetType().GetProperty("Position")?.GetValue(item)?.ToString()
-            }).ToArray();
-            var snapshot = new { selection, hostState = HostSelection.ReadHostState(), unlockedObjects = HostSelection.ReadObjects() };
-            output!.Text = JsonSerializer.Serialize(snapshot, new JsonSerializerOptions { WriteIndented = true });
+            var snapshot = SelectionReport.Capture(
+                (IEnumerable)HostSelection.GlobalSelection,
+                () => HostSelection.ReadHostState(),
+                () => HostSelection.ReadObjects());
+            output!.Text = SelectionReport.Serialize(snapshot);
             Host.Receipt("schematic-tools", "selection", snapshot);
         }
         catch(Exception ex) { output!.Text = ex.GetBaseException().Message; Host.Error("schematic-tools",ex); }
