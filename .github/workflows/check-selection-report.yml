@@ -8,6 +8,9 @@ on:
       - 'DeveloperModule.cs'
       - 'Designer.Modules.SelectionProbe.csproj'
       - 'SelectionReport.cs'
+      - 'SelectionRefreshSession.cs'
+      - 'EventSubscriptions.cs'
+      - 'SelectionNotifications.cs'
       - 'tests/SelectionReport.Tests/**'
   push:
     branches: [main]
@@ -17,6 +20,9 @@ on:
       - 'DeveloperModule.cs'
       - 'Designer.Modules.SelectionProbe.csproj'
       - 'SelectionReport.cs'
+      - 'SelectionRefreshSession.cs'
+      - 'EventSubscriptions.cs'
+      - 'SelectionNotifications.cs'
       - 'tests/SelectionReport.Tests/**'
 
 permissions:

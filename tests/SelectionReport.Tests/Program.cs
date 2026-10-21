@@ -232,12 +232,13 @@ var tests = new (string Name, Action Run)[]
 };
 
 var failed = 0;
-foreach (var test in tests)
+var allTests = tests.Concat(RefreshTests.All()).Concat(NotificationTests.All()).ToArray();
+foreach (var test in allTests)
 {
     try { test.Run(); Console.WriteLine($"PASS {test.Name}"); }
     catch (Exception ex) { failed++; Console.Error.WriteLine($"FAIL {test.Name}: {ex}"); }
 }
-Console.WriteLine($"{tests.Length - failed}/{tests.Length} selection-report checks passed.");
+Console.WriteLine($"{allTests.Length - failed}/{allTests.Length} selection-report checks passed.");
 return failed == 0 ? 0 : 1;
 
 static JsonElement Report(IEnumerable items, Func<object?>? host = null, Func<object?>? unlocked = null)
