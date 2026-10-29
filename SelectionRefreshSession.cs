@@ -11,6 +11,8 @@ internal sealed class SelectionRefreshSession : IDisposable
     private bool started;
     private bool disposed;
     private bool pending;
+    private bool queued;
+    private bool reading;
     private long generation;
 
     internal SelectionRefreshSession(Action<Action> post, Action refresh, Action<Exception> reportError)
@@ -27,18 +29,15 @@ internal sealed class SelectionRefreshSession : IDisposable
             ObjectDisposedException.ThrowIf(disposed, this);
             if (started) return;
             started = true;
-            try
-            {
-                var acquired = subscribe(RequestRefresh);
-                if (disposed) acquired.Dispose();
-                else subscription = acquired;
-            }
-            catch
-            {
-                Dispose();
-                throw;
-            }
         }
+        IDisposable acquired;
+        try { acquired = subscribe(RequestRefresh); }
+        catch { Dispose(); throw; }
+        lock (gate)
+        {
+            if (!disposed) { subscription = acquired; return; }
+        }
+        acquired.Dispose();
     }
 
     // Event arguments are deliberately not retained. The callback reads current state.
@@ -46,49 +45,86 @@ internal sealed class SelectionRefreshSession : IDisposable
     {
         lock (gate)
         {
-            if (!started || disposed || pending) return;
+            if (!started || disposed) return;
             pending = true;
-            var ticket = ++generation;
-            try { post!(() => Drain(ticket)); }
-            catch (Exception ex)
+        }
+        QueuePending();
+    }
+
+    private void QueuePending()
+    {
+        Action<Action> schedule;
+        long ticket;
+        lock (gate)
+        {
+            if (disposed || !pending || reading || queued) return;
+            queued = true;
+            ticket = ++generation;
+            schedule = post!;
+        }
+        // Host callbacks, dispatcher posting and capture must never hold the gate.
+        try { schedule(() => Drain(ticket)); }
+        catch (Exception ex)
+        {
+            lock (gate)
             {
-                pending = false;
-                Report(ex);
+                if (disposed || !queued || generation != ticket) return;
+                queued = false;
+                generation++; // Ignore a callback if the failed poster queued it first.
             }
+            Report(ex);
         }
     }
 
     internal void RefreshNow()
     {
+        Action read;
         lock (gate)
         {
             if (!started || disposed) return;
-            pending = false;
+            queued = false;
             generation++; // An earlier queued callback must not repaint after manual Read.
-            Refresh();
+            pending = true;
+            if (reading) return;
+            pending = false;
+            reading = true;
+            read = refresh!;
         }
+        Refresh(read);
     }
 
     private void Drain(long ticket)
     {
+        Action read;
         lock (gate)
         {
-            if (disposed || !pending || generation != ticket) return;
+            if (disposed || !queued || generation != ticket) return;
+            queued = false;
+            if (!pending || reading) return;
             pending = false;
-            Refresh();
+            reading = true;
+            read = refresh!;
         }
+        Refresh(read);
     }
 
-    private void Refresh()
+    private void Refresh(Action read)
     {
-        try { refresh!(); }
+        try { read(); }
         catch (Exception ex) { Report(ex); }
+        finally
+        {
+            lock (gate) { reading = false; }
+            QueuePending();
+        }
     }
 
     private void Report(Exception error)
     {
         // A diagnostic sink must never throw back into a native notification.
-        try { reportError?.Invoke(error); }
+        Action<Exception>? report;
+        lock (gate) { report = reportError; }
+        try { report?.Invoke(error); }
         catch { }
     }
 
@@ -100,6 +136,7 @@ internal sealed class SelectionRefreshSession : IDisposable
             if (disposed) return;
             disposed = true;
             pending = false;
+            queued = false;
             generation++;
             old = subscription;
             subscription = null;

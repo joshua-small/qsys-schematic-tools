@@ -6,6 +6,34 @@ internal static class NotificationTests
 {
     internal static IEnumerable<(string Name, Action Run)> All()
     {
+        yield return ("capture context rejects a replaced document on the same manager", () =>
+        {
+            Reset(); var before = SelectionNotifications.ReadContext();
+            Equal(true, before.Matches(SelectionNotifications.ReadContext()));
+            Manager.Document = new object();
+            Equal(false, before.Matches(SelectionNotifications.ReadContext()));
+        });
+        yield return ("capture context rejects changed publishers and loading transitions", () =>
+        {
+            Reset(); var before = SelectionNotifications.ReadContext();
+            Manager.IsLoading = true;
+            Equal(false, before.Matches(SelectionNotifications.ReadContext()));
+            Manager.IsLoading = false;
+            QsysMods.Core.HostSelection.GlobalSelection = new SyntheticSelection();
+            Equal(false, before.Matches(SelectionNotifications.ReadContext()));
+            before = SelectionNotifications.ReadContext();
+            SyntheticApp.Manager = new SyntheticManager();
+            Equal(false, before.Matches(SelectionNotifications.ReadContext()));
+        });
+        yield return ("loading context tolerates a temporarily absent document but never publishes it", () =>
+        {
+            Reset(); Manager.Document = null!; Manager.IsLoading = true;
+            var loading = SelectionNotifications.ReadContext();
+            Equal(true, loading.IsLoading);
+            Equal(false, loading.Matches(loading));
+            Manager.IsLoading = false;
+            Throws<MissingMemberException>(() => _ = SelectionNotifications.ReadContext());
+        });
         yield return ("native adapter routes selection document operation and connection events", () =>
         {
             Reset(); var calls = 0;
@@ -143,6 +171,7 @@ internal static class NotificationTests
         public event EndOperationHandler? OnEndOperation;
         public event PropertyChangedEventHandler? PropertyChanged;
         public bool IsLoading { get; set; }
+        public object Document { get; set; } = new();
         public int PropertyCount => PropertyChanged?.GetInvocationList().Length ?? 0;
         public int OperationCount => OnEndOperation?.GetInvocationList().Length ?? 0;
         public void Property(string name) => PropertyChanged?.Invoke(this, new(name));

@@ -82,31 +82,53 @@ public sealed class SelectionProbeModule : ModModule
     }
     private void Read()
     {
-        if (window is null || output is null) return;
-        window.Dispatcher.VerifyAccess();
-        if (!Host.Enabled || !Host.DeveloperMode) { window.Close(); return; }
+        var view = window;
+        var report = output;
+        if (view is null || report is null) return;
+        bool CurrentWindow() => ReferenceEquals(window, view) && ReferenceEquals(output, report);
+        view.Dispatcher.VerifyAccess();
+        if (!Host.Enabled || !Host.DeveloperMode) { view.Close(); return; }
         try
         {
             try { notifications?.Rebind(); }
             catch (Exception ex)
             {
+                if (!CurrentWindow()) return;
                 StopRefresh();
                 refreshStatus!.Text = "Automatic refresh unavailable. Use Read current selection.";
                 Host.Error("schematic-tools", ex);
             }
             // Never show the previous document's report during a nested loading dispatch.
-            if (SelectionNotifications.IsLoading)
+            var context = SelectionNotifications.ReadContext();
+            if (!CurrentWindow()) return;
+            if (context.IsLoading)
             {
-                output.Text = "Selection temporarily unavailable while the design is loading.";
+                report.Text = "Selection temporarily unavailable while the design is loading.";
                 return;
             }
             var snapshot = SelectionReport.Capture(
-                (IEnumerable)HostSelection.GlobalSelection,
+                (IEnumerable)context.Selection,
                 () => HostSelection.ReadHostState(),
                 () => HostSelection.ReadObjects());
-            output!.Text = SelectionReport.Serialize(snapshot);
+            var json = SelectionReport.Serialize(snapshot);
+            var current = SelectionNotifications.ReadContext();
+            if (!CurrentWindow()) return;
+            if (!context.Matches(current))
+            {
+                report.Text = current.IsLoading ? "Selection temporarily unavailable while the design is loading."
+                    : refreshSession is null ? "The design changed during capture. Use Read current selection."
+                    : "The design changed during capture. Refreshing selection…";
+                refreshSession?.RequestRefresh();
+                return;
+            }
+            report.Text = json;
             Host.Receipt("schematic-tools", "selection", snapshot);
         }
-        catch(Exception ex) { output!.Text = ex.GetBaseException().Message; Host.Error("schematic-tools",ex); }
+        catch(Exception ex)
+        {
+            if (!CurrentWindow()) return;
+            report.Text = ex.GetBaseException().Message;
+            Host.Error("schematic-tools", ex);
+        }
     }
 }

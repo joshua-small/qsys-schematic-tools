@@ -6,6 +6,51 @@ internal static class RefreshTests
 {
     internal static IEnumerable<(string Name, Action Run)> All()
     {
+        yield return ("nested dispatcher work never reenters an active capture", () =>
+        {
+            var q = new Queue(); var source = new Source();
+            var reads = 0; var depth = 0; var maximumDepth = 0;
+            using var session = new SelectionRefreshSession(q.Post, () =>
+            {
+                maximumDepth = Math.Max(maximumDepth, ++depth);
+                if (++reads == 1) { source.Raise(); q.Next(); }
+                depth--;
+            }, error => throw error);
+            session.Start(source.Subscribe); source.Raise(); q.Drain();
+            Equal(2, reads); Equal(1, maximumDepth);
+        });
+        yield return ("manual Read during capture requests a following read without recursion", () =>
+        {
+            var q = new Queue(); var source = new Source();
+            var reads = 0; var depth = 0; var maximumDepth = 0;
+            SelectionRefreshSession? session = null;
+            using (session = new SelectionRefreshSession(q.Post, () =>
+            {
+                maximumDepth = Math.Max(maximumDepth, ++depth);
+                if (++reads == 1) session!.RefreshNow();
+                depth--;
+            }, error => throw error))
+            {
+                session.Start(source.Subscribe); session.RefreshNow(); q.Drain();
+                Equal(2, reads); Equal(1, maximumDepth);
+            }
+        });
+        yield return ("capture does not block a notification arriving on another thread", () =>
+        {
+            var q = new Queue(); var source = new Source();
+            var reads = 0; var completedDuringCapture = false; Task? notification = null;
+            using var session = new SelectionRefreshSession(q.Post, () =>
+            {
+                if (++reads != 1) return;
+                notification = Task.Run(source.Raise);
+                completedDuringCapture = notification.Wait(TimeSpan.FromSeconds(2));
+            }, error => throw error);
+            session.Start(source.Subscribe); source.Raise(); q.Next();
+            if (notification?.Wait(TimeSpan.FromSeconds(2)) != true)
+                throw new Exception("Notification remained blocked after capture.");
+            q.Drain();
+            Equal(true, completedDuringCapture); Equal(2, reads);
+        });
         yield return ("notifications coalesce into one deferred read", () =>
         {
             var q = new Queue();

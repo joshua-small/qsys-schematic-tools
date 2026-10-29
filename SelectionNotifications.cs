@@ -23,9 +23,20 @@ internal sealed class SelectionNotifications : IDisposable
         HostSelection.HostType("QSC.QSys.App").GetField("Manager", Host.Static)?.GetValue(null)
         ?? throw new MissingFieldException("QSC.QSys.App", "Manager");
 
-    internal static bool IsLoading =>
-        HostSelection.RequiredProperty(CurrentManager, "IsLoading") is bool loading ? loading
+    private static bool Loading(object currentManager) =>
+        HostSelection.RequiredProperty(currentManager, "IsLoading") is bool loading ? loading
         : throw new InvalidOperationException("The design loading state is unavailable.");
+
+    internal static bool IsLoading => Loading(CurrentManager);
+
+    internal static SelectionReadContext ReadContext()
+    {
+        var currentManager = CurrentManager;
+        var loading = Loading(currentManager);
+        return new(currentManager,
+            loading ? null : HostSelection.RequiredProperty(currentManager, "Document"),
+            HostSelection.GlobalSelection, loading);
+    }
 
     internal void Rebind()
     {
@@ -72,4 +83,15 @@ internal sealed class SelectionNotifications : IDisposable
         connection = null;
         previous?.Dispose();
     }
+}
+
+// A capture may pump a nested UI frame. Do not publish across a document change.
+internal readonly record struct SelectionReadContext(object Manager, object? Document,
+    object Selection, bool IsLoading)
+{
+    internal bool Matches(SelectionReadContext current) =>
+        !IsLoading && !current.IsLoading &&
+        ReferenceEquals(Manager, current.Manager) &&
+        ReferenceEquals(Document, current.Document) &&
+        ReferenceEquals(Selection, current.Selection);
 }

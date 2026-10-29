@@ -54,14 +54,21 @@ below the host selection notification's background priority, and verifies UI
 thread access before capture. Repeated requests coalesce while a read is pending.
 The callback captures the current selection and host context; event arguments,
 document objects and selected models are not stored for later use. There is no
-polling timer.
+polling timer. Capture and dispatcher posting run outside the session lock, so
+worker notifications do not wait for a UI capture to finish. A nested dispatcher
+frame or manual Read cannot reenter an active capture; it requests one following
+read. Subscription setup and error reporting also run outside that lock.
 
 The publisher identities are checked before each read. Changed publishers replace
 the old subscription set; ordinary document replacement on the same manager
 needs no document-specific subscription. Activating the window requests a read
 as well. While `IsLoading` is true, the UI replaces its report with a loading
 message and waits for a later notification or manual Read. Unknown loading state
-is an error, not an assumed usable document.
+is an error, not an assumed usable document. Manager, document and global selection
+identities are checked again after serialization. A changed/loading document
+discards the report and requests a fresh capture. The window also verifies that
+the original output control still belongs to the current window before publishing
+a result or error, so a closed window cannot overwrite a reopened report.
 
 Manual Read invalidates an older queued read. Close invalidates all queued work,
 clears UI callbacks, and removes the exact subscribed delegates. Reopen starts
@@ -76,13 +83,16 @@ truncate that error or infer values. The existing explicit Debug Move button is
 the only movement action. Automatic and manual reads do not start transactions,
 move objects, save a design, or deploy to a Core.
 
-Core's exact supported-host guard and the existing developer-mode gate still
-apply. The adapter checks event parameter types and public add/remove methods
+Core's host compatibility policy and the existing developer-mode gate still
+apply. Core 0.1.10+ may also permit a different runtime through an existing
+installation-specific exact-build opt-in. That consent does not establish native
+acceptance for this feature. The adapter checks event parameter types and public add/remove methods
 before subscribing. These are internal host contracts, not a supported vendor
 extension API; unknown contracts fall back to manual diagnostics.
 
 The portable suite covers coalescing, worker-thread notification delivery,
-latest-state reads, manual cancellation, subscribe/close/reopen, reentrant changes,
+latest-state reads, manual cancellation, subscribe/close/reopen, nested dispatcher
+and manual-read reentrancy, nonblocking worker notifications, document identity guards,
 reader/posting failures, exact reflected instance/static delegates, partial setup
 rollback, and cleanup after a removal failure. It compiles the production
 `SelectionNotifications` adapter against a test-only Core resolution boundary:
