@@ -19,7 +19,12 @@ JSON fields. Each selected entry contains `type`, `label`, and `position`.
 Selection order and duplicates are preserved; at most 256 entries are read.
 The bound applies only to the selected entries, not the unlocked-object payload.
 
-Types use their CLR full name. Missing or null properties remain JSON null.
+Types use their CLR full name. Labels use the selected item's public `Label`
+property when present. A selected graphic without that property reads the public
+`Label` on its underlying public `obj` design object. This fallback is one level
+only; the reported type and position still belong to the selected graphic.
+Each capture reads the current label, so a later rename is reflected without
+changing an earlier captured report. Missing or null values remain JSON null.
 A label of another type remains null; a non-null position uses its own
 `ToString()` representation. Empty strings remain empty. These are diagnostics,
 not inferred schematic geometry or invented labels.
@@ -33,7 +38,7 @@ exception message and calls its existing error-reporting path.
 
 The checks cover empty/single/multiple selections, 255/256/257 entry boundaries,
 bounded enumeration and disposal, unknown values, nested host payloads,
-JSON escaping, and rejection of failing getters/readers, null items, cycles,
+JSON escaping, graphic/model labels and rename recapture, and rejection of failing getters/readers, null items, cycles,
 unsupported values and non-finite numbers. Linking the helper proves these
 portable behaviors; it does not validate Designer.
 
@@ -102,9 +107,9 @@ against those inputs, not that Designer emits the assumed events in every mode.
 
 ## Separate native acceptance
 
-Portable checks and a full WPF build have passed for this candidate. Native
-automatic-refresh acceptance is pending; do not mark the following cases passed
-from synthetic tests or a successful build.
+Portable checks and a full WPF build do not establish native automatic-refresh
+acceptance. Record the following cases from actual application observations,
+separately from synthetic tests or a successful build.
 
 Before accepting the adapter in Designer, use a disposable design and check:
 

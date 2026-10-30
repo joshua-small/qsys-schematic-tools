@@ -79,6 +79,74 @@ var tests = new (string Name, Action Run)[]
         var entry = Entries(new[] { new UnknownLabel() })[0];
         Equal(JsonValueKind.Null, entry.GetProperty("label").ValueKind);
     }),
+    ("graphic selection uses its design model label without replacing graphic identity or position", () =>
+    {
+        var graphic = new GraphicItem { obj = new Item { Label = "Input A", Position = "model position" }, Position = "graphic position" };
+        var entry = Entries(new[] { graphic })[0];
+        Equal(typeof(GraphicItem).FullName, entry.GetProperty("type").GetString());
+        Equal("Input A", entry.GetProperty("label").GetString());
+        Equal("graphic position", entry.GetProperty("position").GetString());
+    }),
+    ("recapture follows a renamed model while the previous report remains unchanged", () =>
+    {
+        var model = new Item { Label = "Before" };
+        var graphic = new GraphicItem { obj = model };
+        var first = Entries(new[] { graphic });
+        model.Label = "After";
+        Equal("After", Entries(new[] { graphic })[0].GetProperty("label").GetString());
+        Equal("Before", first[0].GetProperty("label").GetString());
+    }),
+    ("model and model-label getters are each read once per capture", () =>
+    {
+        var graphic = new CountingGraphic();
+        Equal("before", Entries(new[] { graphic })[0].GetProperty("label").GetString());
+        Equal(1, graphic.ModelReads);
+        Equal(1, graphic.Model.LabelReads);
+        Equal(0, graphic.Model.PositionReads);
+    }),
+    ("existing direct label including null and empty takes precedence without reading the model", () =>
+    {
+        foreach (var label in new string?[] { "direct", "", null })
+            Equal(label, Entries(new[] { new DirectGraphic { Label = label } })[0].GetProperty("label").GetString());
+        Equal(JsonValueKind.Null, Entries(new[] { new NonStringDirectGraphic() })[0].GetProperty("label").ValueKind);
+    }),
+    ("null model and missing null or non-string model labels remain unknown", () =>
+    {
+        foreach (var model in new object?[] { null, new object(), new Item(), new UnknownLabel() })
+            Equal(JsonValueKind.Null, Entries(new[] { new GraphicItem { obj = model } })[0].GetProperty("label").ValueKind);
+        Equal("", Entries(new[] { new GraphicItem { obj = new Item { Label = "" } } })[0].GetProperty("label").GetString());
+    }),
+    ("private underlying model is not exposed", () =>
+    {
+        Equal(JsonValueKind.Null, Entries(new[] { new PrivateGraphicModel() })[0].GetProperty("label").ValueKind);
+    }),
+    ("private model label is not exposed", () =>
+    {
+        Equal(JsonValueKind.Null, Entries(new[] { new GraphicItem { obj = new PrivateProperties() } })[0].GetProperty("label").ValueKind);
+    }),
+    ("underlying model getter failure propagates before host readers", () =>
+    {
+        var reads = 0;
+        var error = Throws<TargetInvocationException>(() => SelectionReport.Capture(
+            new[] { new ThrowingGraphicModel() }, () => ++reads, () => ++reads));
+        Equal("model failed", error.GetBaseException().Message);
+        Equal(0, reads);
+    }),
+    ("model label getter failure propagates before host readers", () =>
+    {
+        var reads = 0;
+        var error = Throws<TargetInvocationException>(() => SelectionReport.Capture(
+            new[] { new GraphicItem { obj = new ThrowingLabel() } }, () => ++reads, () => ++reads));
+        Equal("label failed", error.GetBaseException().Message);
+        Equal(0, reads);
+    }),
+    ("model label fallback does not read past the selection bound", () =>
+    {
+        var entries = Entries(Enumerable.Range(0, 256).Select(i => (object)new GraphicItem { obj = new Item { Label = i.ToString() } })
+            .Append(new ThrowingGraphicModel()));
+        Equal(256, entries.GetArrayLength());
+        Equal("255", entries[255].GetProperty("label").GetString());
+    }),
     ("private properties are not exposed", () =>
     {
         var entry = Entries(new[] { new PrivateProperties() })[0];
@@ -268,6 +336,17 @@ static T Throws<T>(Action action) where T : Exception
 
 public class Item { public string? Label { get; set; } public object? Position { get; set; } }
 public sealed class DerivedItem : Item;
+public sealed class GraphicItem { public object? obj { get; set; } public object? Position { get; set; } }
+public sealed class DirectGraphic : Item { public object obj => throw new Exception("Model should not be read."); }
+public sealed class NonStringDirectGraphic { public int Label => 17; public object obj => throw new Exception("Model should not be read."); }
+public sealed class PrivateGraphicModel { private object obj => throw new Exception("Private model should not be read."); }
+public sealed class ThrowingGraphicModel { public object obj => throw new InvalidOperationException("model failed"); }
+public sealed class CountingGraphic
+{
+    public readonly CountingItem Model = new();
+    public int ModelReads;
+    public object obj { get { ModelReads++; return Model; } }
+}
 public sealed class PointText { public override string ToString() => "12.5, -20"; }
 public sealed class NullText { public override string? ToString() => null; }
 public sealed class UnknownLabel { public int Label => 17; }

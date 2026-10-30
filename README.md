@@ -18,6 +18,8 @@ Use Q-SYS Mod Manager 0.8+ and **Split Schematic Tools** to migrate the older bu
 
 The public history through commit `13c52e6` preserves the bundled implementation, its tests, and prior application evidence. The diagnostics window reports selected object types/labels/positions and host/undo state, with a 256-object limit. Its separate **Debug: Move selection down 20** button retains the original explicit mutation, validation, grouped undo, and required diagnostic receipts. Opening or reading the window does not move objects.
 
+Selected graphics report the label of their underlying design object when the graphic itself has no label property. Renaming a selected component is reflected on the next refresh while its reported graphic type and position remain unchanged.
+
 While the diagnostics window is open, selection changes refresh its report automatically. Document loading, completed edits/undo, connection changes, and returning to the window also request a refresh. Bursts share one deferred UI-thread read of the current state. Closing the window detaches its notifications and cancels its pending refresh; reopening creates a fresh subscription.
 
 **Read current selection** remains available for an immediate read. If a capture is already running, it requests one following read instead of starting a nested capture. If automatic notification setup fails, the window shows a manual-only status. A capture failure replaces the report with the error; a later valid selection can recover. During document loading, the window shows a temporary loading message. Captures spanning a document change or a closed/reopened diagnostics window are discarded.
@@ -34,7 +36,7 @@ The suite tests the production report helper, refresh lifecycle, and notificatio
 adapter using synthetic publishers. See
 [selection report validation](docs/SELECTION-REPORT-VALIDATION.md) for coverage,
 error boundaries, and the separate native lifecycle acceptance procedure.
-The automatic-refresh source builds, but its native Designer acceptance remains
-pending. Portable checks do not establish native event timing or compatibility.
+Portable checks do not establish native event timing or compatibility; those
+require the separate Designer acceptance cases documented there.
 
 [Split and release tracking](https://github.com/joshua-small/qsys-schematic-tools/issues/4).
