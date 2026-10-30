@@ -137,15 +137,62 @@ separate evidence for synthetic report, getter-failure and lifecycle behavior.
 
 After F7, Designer reported `dirty=true` with undo, redo and current history
 counts all zero. The recorded fields of the three components matched baseline.
-Complete live-document equality and a stock-versus-mod cause comparison were
-not established. Original and initial-copy bytes were preserved, and the dirty
-state was saved separately. Do not attribute the dirty state to this mod or to
-stock Designer from these observations alone.
+Complete live-document equality was not established. Original and initial-copy
+bytes were preserved, and the dirty state was saved separately. The later
+controlled 10.5.1 comparison below addresses the dirty-state question separately.
+
+### Designer 10.5.1
+
+The same module hash and Mods Core 0.1.11 passed bounded checks on Designer
+10.5.1. Automatic reports followed single, multiple, empty and rapid-final
+selections; recorded component fields, dirty state and history stayed unchanged.
+A native label/position edit, Undo and Redo updated the report without
+reselection. Final Undo restored the recorded fields and a clean document.
+Manual Read preserved those fields and history. Native document replacement
+cleared selection/history, then reported the correct newly selected component.
+One diagnostics close/reopen cycle stopped reports during the observed closed
+interval and reported the current component after reopening.
+
+Selection/edit operations used native application operations; displayed reports,
+manual Read, page navigation, Emulation and window lifecycle were also observed
+in the application. Page navigation alone does not establish receipt routing
+for a page-change event. Manual Read and reopen each produced two receipts, so
+these checks do not establish one report per physical action. An initial 800 ms
+observation was too early; the automatic report arrived about 1.28 seconds after
+that selection operation. Waiting for a fresh report resolved the observation
+without replaying the selection or changing the product. No latency guarantee
+is claimed. The 54 native/file assertions are separate from the GUI observations
+and the 82 portable checks.
+
+### Controlled F7 comparison on 10.5.1
+
+The same source design was opened in two application copies: one with the
+tested mod and one without product mods. The latter retained profile-isolation
+instrumentation; it was not an entirely uninstrumented process. Each arm saved
+a load-only control, entered local Emulation, left with F7, and saved separately,
+without intervening schematic or control edits.
+
+Both arms became dirty after F7 and had unavailable Undo/Redo commands. The
+modded arm's numeric undo/redo/current history counts were all zero; numeric
+history was not read in the comparison arm. Each saved result added four
+settings files and nine cached control values. The nine recorded values matched
+between arms. Recorded component, pin and property fields stayed stable from
+each load-only save to its post-F7 save. Both load-only controls shared the same
+earlier component-size normalization.
+
+This reproduces the dirty state without Schematic Tools and is consistent with
+Designer synchronizing settings when leaving Emulation. The mod does not clear
+that state. Settings XML was byte-identical or differed only in GUID values;
+the binary global snapshots differed and their semantic equivalence was not
+established. Neither complete live-document equality nor every stored field or
+wire endpoint was established. This comparison does not imply every F7 action
+always makes a document dirty.
 
 Native unsupported-selection/getter-failure recovery, pending-dispatch shutdown
-races, full application cold reopen/persistence, Designer 10.5.1, and live
-Core/hardware checks were not run. Exact-build consent and compilation do not
-establish acceptance of another Designer build.
+races, full application cold reopen/persistence, and live Core/hardware checks
+were not run. These bounded results do not establish every feature or host
+configuration. Exact-build consent and compilation do not establish acceptance
+of another Designer build.
 
 ## Native acceptance procedure
 
