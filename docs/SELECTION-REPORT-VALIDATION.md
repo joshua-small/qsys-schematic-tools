@@ -105,7 +105,49 @@ synthetic publishers exercise all four sources, publisher replacement, rollback,
 unknown loading state, and close/reopen. This proves the adapter's routing logic
 against those inputs, not that Designer emits the assumed events in every mode.
 
-## Separate native acceptance
+## Recorded 0.17.2 acceptance
+
+The module with SHA-256
+`f5180855e84c239ed3639df84f007f69679103f38e1ebf2b7f9a57769530eae8`
+was checked on Designer 10.5.0 with Mods Core 0.1.11. These results cover the
+label correction and bounded automatic-refresh cases, not every lifecycle or
+host configuration:
+
+- Empty, single and multiple selections, plus a rapid sequence ending on a
+  distinct component, produced the expected labels automatically. Each bounded
+  selection sequence produced one report. The recorded component fields, dirty
+  state and history remained unchanged during those selection checks.
+- A native transaction changed a selected component's label, position and size.
+  The report followed label/position edits, Undo and Redo without reselection.
+  Final Undo restored the recorded component fields; manual Read retained those
+  fields and a clean document.
+- Page switching and native document replacement were exercised. Replacement
+  changed the document reference and cleared the previous selection.
+- F6/F7 updated mode reporting. Local Emulation was observed; this does not
+  establish live Core behavior.
+- One diagnostics-window close/reopen cycle produced no new reports during
+  selection changes while closed, then two reports on reopening with the current
+  component. This is not application cold-reopen/persistence acceptance, repeated
+  shutdown-race coverage, or a general one-report-per-action guarantee.
+
+Selection notifications and edit/Undo/Redo transactions used native operations.
+Rendered reports, manual Read, page switching, F6/F7 and diagnostics-window
+closing/reopening were observed in Designer. The 82 portable checks remain
+separate evidence for synthetic report, getter-failure and lifecycle behavior.
+
+After F7, Designer reported `dirty=true` with undo, redo and current history
+counts all zero. The recorded fields of the three components matched baseline.
+Complete live-document equality and a stock-versus-mod cause comparison were
+not established. Original and initial-copy bytes were preserved, and the dirty
+state was saved separately. Do not attribute the dirty state to this mod or to
+stock Designer from these observations alone.
+
+Native unsupported-selection/getter-failure recovery, pending-dispatch shutdown
+races, full application cold reopen/persistence, Designer 10.5.1, and live
+Core/hardware checks were not run. Exact-build consent and compilation do not
+establish acceptance of another Designer build.
+
+## Native acceptance procedure
 
 Portable checks and a full WPF build do not establish native automatic-refresh
 acceptance. Record the following cases from actual application observations,
