@@ -9,6 +9,11 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="Program.cs" />
+    <Compile Include="RefreshTests.cs" />
+    <Compile Include="NotificationTests.cs" />
     <Compile Include="../../SelectionReport.cs" Link="SelectionReport.cs" />
+    <Compile Include="../../SelectionRefreshSession.cs" Link="SelectionRefreshSession.cs" />
+    <Compile Include="../../EventSubscriptions.cs" Link="EventSubscriptions.cs" />
+    <Compile Include="../../SelectionNotifications.cs" Link="SelectionNotifications.cs" />
   </ItemGroup>
 </Project>

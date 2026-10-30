@@ -16,10 +16,19 @@ internal static class SelectionReport
         var selection = items.Cast<object>().Take(MaximumItems).Select(item => new
         {
             type = item.GetType().FullName,
-            label = item.GetType().GetProperty("Label")?.GetValue(item) as string,
+            label = ReadLabel(item),
             position = item.GetType().GetProperty("Position")?.GetValue(item)?.ToString()
         }).ToArray();
         return new { selection, hostState = readHostState(), unlockedObjects = readUnlockedObjects() };
+    }
+
+    private static string? ReadLabel(object item)
+    {
+        var label = item.GetType().GetProperty("Label");
+        if (label is not null) return label.GetValue(item) as string;
+        // Selected graphics expose the labeled design object through obj.
+        var model = item.GetType().GetProperty("obj")?.GetValue(item);
+        return model?.GetType().GetProperty("Label")?.GetValue(model) as string;
     }
 
     // Failures must reach the caller; a partial report must not look successful.
